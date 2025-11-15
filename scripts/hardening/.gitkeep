@@ -1,0 +1,388 @@
+# Create-Hardening-Docs.ps1
+# Script pour générer automatiquement la documentation complète sur le hardening
+
+Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host "  Création Documentation Hardening       " -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host ""
+
+# Vérifier qu'on est dans le bon dossier
+$currentPath = Get-Location
+Write-Host "📁 Dossier actuel : $currentPath" -ForegroundColor Yellow
+Write-Host ""
+
+# Créer le dossier docs s'il n'existe pas
+if(!(Test-Path "docs")) {
+    New-Item -ItemType Directory -Path "docs" -Force | Out-Null
+    Write-Host "✓ Dossier docs/ créé" -ForegroundColor Green
+}
+
+# ============================================
+# FICHIER 1 : hardening.md (Guide complet)
+# ============================================
+
+$hardeningContent = @'
+# 🛡️ Guide de Durcissement Windows 10/11
+
+> Guide complet pour renforcer la sécurité des postes de travail Windows dans un contexte PME/TPE
+
+---
+
+## Table des Matières
+
+1. [Introduction](#introduction)
+2. [Prérequis](#prérequis)
+3. [Durcissement de Base](#durcissement-de-base)
+4. [Durcissement Avancé](#durcissement-avancé)
+5. [Scripts Automatisés](#scripts-automatisés)
+6. [Vérification](#vérification)
+7. [Maintenance](#maintenance)
+
+---
+
+## Introduction
+
+Le durcissement (hardening) consiste à réduire la surface d'attaque d'un système en :
+- Désactivant les fonctionnalités non utilisées
+- Renforçant les configurations de sécurité
+- Appliquant le principe du moindre privilège
+- Limitant l'exposition aux menaces
+
+### Objectifs
+
+- ✅ Réduire les vulnérabilités exploitables
+- ✅ Limiter l'impact d'une compromission
+- ✅ Respecter les bonnes pratiques de sécurité (CIS, NIST, ANSSI)
+- ✅ Faciliter la détection d'incidents
+
+---
+
+## Prérequis
+
+### Avant de Commencer
+
+⚠️ **CRITIQUE** : Créez TOUJOURS une sauvegarde complète avant toute modification
+
+Créer un point de restauration
+Checkpoint-Computer -Description "Avant durcissement $(Get-Date -Format 'yyyy-MM-dd')" -RestorePointType "MODIFY_SETTINGS"
+
+Vérifier que le point a été créé
+Get-ComputerRestorePoint | Select-Object -First 1
+
+text
+
+### Droits Requis
+
+- Compte administrateur local
+- PowerShell 5.1+ en mode élevé
+- Connexion Internet (pour mises à jour)
+
+### Environnement de Test
+
+**Recommandé** : Testez d'abord sur :
+- Machine virtuelle (VirtualBox, VMware, Hyper-V)
+- Windows Sandbox
+- Poste de test dédié
+
+---
+
+## Durcissement de Base
+
+### 1. Windows Defender
+
+#### Activation et Configuration Complète
+
+Activer la protection en temps réel
+Set-MpPreference -DisableRealtimeMonitoring $false
+
+Activer la protection cloud (MAPS)
+Set-MpPreference -MAPSReporting Advanced
+
+Activer l'envoi automatique d'échantillons
+Set-MpPreference -SubmitSamplesConsent SendAllSamples
+
+Activer la protection contre les PUA
+Set-MpPreference -PUAProtection Enabled
+
+Activer l'analyse des scripts
+Set-MpPreference -DisableScriptScanning $false
+
+Activer la protection réseau
+Set-MpPreference -EnableNetworkProtection Enabled
+
+Mettre à jour les signatures
+Update-MpSignature
+
+Vérifier l'état
+Get-MpComputerStatus | Select-Object AntivirusEnabled, RealTimeProtectionEnabled, NISEnabled
+
+text
+
+#### Protection Anti-Ransomware (Controlled Folder Access)
+
+Activer Controlled Folder Access
+Set-MpPreference -EnableControlledFolderAccess Enabled
+
+Ajouter des dossiers protégés supplémentaires
+Add-MpPreference -ControlledFolderAccessProtectedFolders "C:\Documents", "C:\Projets"
+
+Autoriser des applications de confiance si nécessaire
+Add-MpPreference -ControlledFolderAccessAllowedApplications "C:\Program Files\MonApp\app.exe"
+text
+
+#### Attack Surface Reduction (ASR Rules)
+
+Bloquer les exécutables provenant d'emails
+Add-MpPreference -AttackSurfaceReductionRules_Ids BE9BA2D9-53EA-4CDC-84E5-9B1EEEE46550 -AttackSurfaceReductionRules_Actions Enabled
+
+Bloquer JavaScript/VBScript lancés depuis Internet
+Add-MpPreference -AttackSurfaceReductionRules_Ids D3E037E1-3EB8-44C8-A917-57927947596D -AttackSurfaceReductionRules_Actions Enabled
+
+Bloquer l'exécution de scripts potentiellement obfusqués
+Add-MpPreference -AttackSurfaceReductionRules_Ids 5BEB7EFE-FD9A-4556-801D-275E5FFC04CC -AttackSurfaceReductionRules_Actions Enabled
+
+Bloquer Win32 API calls depuis Office macros
+Add-MpPreference -AttackSurfaceReductionRules_Ids 92E97FA1-2EDF-4476-BDD6-9DD0B4DDDC7B -AttackSurfaceReductionRules_Actions Enabled
+
+Bloquer la création de processus par Office
+Add-MpPreference -AttackSurfaceReductionRules_Ids D4F940AB-401B-4EFC-AADC-AD5F3C50688A -AttackSurfaceReductionRules_Actions Enabled
+
+text
+
+---
+
+### 2. Pare-feu Windows
+
+#### Configuration Globale
+
+Activer le pare-feu sur tous les profils
+Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True
+
+Configurer le comportement par défaut : bloquer entrant, autoriser sortant
+Set-NetFirewallProfile -Profile Domain,Public,Private -DefaultInboundAction Block -DefaultOutboundAction Allow
+
+Activer la journalisation
+Set-NetFirewallProfile -Profile Domain,Public,Private -LogAllowed True -LogBlocked True -LogMaxSizeKilobytes 4096
+
+Vérifier la configuration
+Get-NetFirewallProfile | Format-Table Name, Enabled, DefaultInboundAction, DefaultOutboundAction
+
+text
+
+#### Règles de Sécurité Spécifiques
+
+Bloquer SMB entrant (sauf si nécessaire pour partage réseau)
+New-NetFirewallRule -DisplayName "Block SMB Inbound" -Direction Inbound -Protocol TCP -LocalPort 445 -Action Block -Enabled True
+
+Bloquer NetBIOS
+New-NetFirewallRule -DisplayName "Block NetBIOS UDP" -Direction Inbound -Protocol UDP -LocalPort 137,138 -Action Block
+New-NetFirewallRule -DisplayName "Block NetBIOS TCP" -Direction Inbound -Protocol TCP -LocalPort 139 -Action Block
+
+Restreindre RDP à des IP spécifiques (remplacer par votre réseau)
+New-NetFirewallRule -DisplayName "RDP Restricted" -Direction Inbound -Protocol TCP -LocalPort 3389 -RemoteAddress 192.168.1.0/24 -Action Allow
+text
+
+---
+
+### 3. Gestion des Comptes Utilisateurs
+
+#### Désactivation des Comptes par Défaut
+
+Désactiver le compte Administrator
+net user Administrator /active:no
+
+Désactiver le compte Guest
+net user Guest /active:no
+
+Lister les comptes actifs
+Get-LocalUser | Where-Object {$_.Enabled -eq $true} | Format-Table Name, Enabled, LastLogon
+
+text
+
+#### Politiques de Mots de Passe
+
+Longueur minimale : 12 caractères
+net accounts /minpwlen:12
+
+Durée de validité : 90 jours
+net accounts /maxpwage:90
+
+Historique : mémoriser les 5 derniers mots de passe
+net accounts /uniquepw:5
+
+Vérifier la configuration
+net accounts
+
+text
+
+#### Verrouillage de Compte
+
+Verrouiller après 5 tentatives échouées
+net accounts /lockoutthreshold:5
+
+Durée de verrouillage : 30 minutes
+net accounts /lockoutduration:30
+
+Réinitialiser le compteur après : 30 minutes
+net accounts /lockoutwindow:30
+
+text
+
+---
+
+### 4. Protocoles et Services Obsolètes
+
+#### Désactiver SMBv1 (vulnérable à WannaCry)
+
+Désactiver SMBv1
+Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -NoRestart
+
+Vérifier que SMBv1 est désactivé
+Get-WindowsOptionalFeature -Online -FeatureName SMB1Protocol
+
+Alternative via configuration SMB
+Set-SmbServerConfiguration -EnableSMB1Protocol $false -Force
+
+text
+
+#### Désactiver NetBIOS sur TCP/IP
+
+Désactiver NetBIOS sur toutes les interfaces réseau
+$adapters = Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "IPEnabled=True"
+foreach($adapter in $adapters) {
+$adapter.SetTcpipNetbios(2) # 2 = Désactivé
+}
+
+Vérifier
+Get-WmiObject Win32_NetworkAdapterConfiguration -Filter "IPEnabled=True" | Select-Object Description, TcpipNetbiosOptions
+
+text
+
+#### Désactiver les Services Non Nécessaires
+
+$servicesToDisable = @(
+"RemoteRegistry", # Registre distant
+"SSDPSRV", # Découverte SSDP (UPnP)
+"upnphost", # Hôte de périphérique UPnP
+"WMPNetworkSvc", # Partage réseau Windows Media Player
+"RemoteAccess", # Routage et accès distant
+"lltdsvc", # Mappage de topologie de couche liaison
+"XblAuthManager", # Xbox Live (si non utilisé)
+"XblGameSave", # Xbox Live Game Save
+"XboxNetApiSvc" # Xbox Live Networking
+)
+
+foreach($service in $servicesToDisable) {
+try {
+$svc = Get-Service -Name $service -ErrorAction SilentlyContinue
+if($svc) {
+Stop-Service -Name $service -Force -ErrorAction SilentlyContinue
+Set-Service -Name $service -StartupType Disabled
+Write-Host "✓ Service $service désactivé" -ForegroundColor Green
+}
+}
+catch {
+Write-Host "⚠ Impossible de désactiver $service" -ForegroundColor Yellow
+}
+}
+
+text
+
+---
+
+### 5. Mises à Jour et Patches
+
+#### Installation du Module PSWindowsUpdate
+
+Installer le module
+Install-Module PSWindowsUpdate -Force -SkipPublisherCheck
+
+Vérifier les mises à jour disponibles
+Get-WindowsUpdate
+
+Installer toutes les mises à jour
+Install-WindowsUpdate -AcceptAll -AutoReboot
+
+Consulter l'historique
+Get-WUHistory | Select-Object -First 10
+
+text
+
+#### Activer les Mises à Jour Automatiques
+
+Via le registre
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "NoAutoUpdate" -Value 0 -Force
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\AU" -Name "AUOptions" -Value 4 -Force
+
+text
+
+---
+
+## Durcissement Avancé
+
+### 6. Chiffrement BitLocker
+
+#### Activer BitLocker
+
+Vérifier le support TPM
+Get-Tpm
+
+Activer BitLocker sur C: avec chiffrement XTS-AES 256
+Enable-BitLocker -MountPoint "C:" -EncryptionMethod XtsAes256 -UsedSpaceOnly -TpmProtector
+
+Sauvegarder la clé de récupération
+$recoveryKey = (Get-BitLockerVolume -MountPoint "C:").KeyProtector | Where-Object {$.KeyProtectorType -eq "RecoveryPassword"}
+$recoveryKey.RecoveryPassword | Out-File "C:\BitLocker_Recovery$(Get-Date -Format 'yyyyMMdd').txt"
+
+Write-Host "⚠️ CRITIQUE : Sauvegardez ce fichier dans un emplacement sécurisé HORS du PC !" -ForegroundColor Red
+
+text
+
+---
+
+### 7. Audit et Journalisation
+
+#### Activer l'Audit des Événements Critiques
+
+Audit des connexions
+auditpol /set /subcategory:"Logon" /success:enable /failure:enable
+auditpol /set /subcategory:"Logoff" /success:enable
+
+Audit des modifications de fichiers
+auditpol /set /subcategory:"File System" /success:enable /failure:enable
+
+Audit des modifications du registre
+auditpol /set /subcategory:"Registry" /success:enable /failure:enable
+
+Audit de la gestion des comptes
+auditpol /set /subcategory:"User Account Management" /success:enable /failure:enable
+auditpol /set /subcategory:"Security Group Management" /success:enable /failure:enable
+
+Audit des changements de politique
+auditpol /set /subcategory:"Audit Policy Change" /success:enable /failure:enable
+
+Vérifier la configuration
+auditpol /get /category:*
+
+text
+
+#### Augmenter la Taille des Logs
+
+Augmenter à 100 MB
+wevtutil sl Security /ms:104857600
+wevtutil sl System /ms:104857600
+wevtutil sl Application /ms:104857600
+
+Vérifier
+wevtutil gli Security | Select-String "maxSize"
+
+text
+
+---
+
+### 8. User Account Control (UAC)
+
+#### Renforcer UAC
+
+Configurer UAC au niveau maximum
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\
