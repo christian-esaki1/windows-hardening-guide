@@ -1,20 +1,19 @@
-# 🛡️ Guide Pratique : Sécuriser un Poste Windows 10/11
+🛡️ Guide Pratique : Sécuriser un Poste Windows 10/11
 
-## 📋 Table des Matières
-1. [Prérequis](#prérequis)
-2. [Configuration de Base](#configuration-de-base)
-3. [Gestion des Comptes](#gestion-des-comptes)
-4. [Pare-feu et Réseau](#pare-feu-et-réseau)
-5. [Antivirus et Protection](#antivirus-et-protection)
-6. [Mises à Jour et Patches](#mises-à-jour)
-7. [Chiffrement](#chiffrement)
-8. [Logs et Audit](#logs-et-audit)
-9. [Scripts d'Automatisation](#scripts-automatisation)
-10. [Checklist de Vérification](#checklist)
+📋 Table des Matières
+1. [Prérequis]
+2. [Configuration de Base]
+3. [Gestion des Comptes]
+4. [Pare-feu et Réseau]
+5. [Antivirus et Protection]
+6. [Mises à Jour et Patches]
+7. [Chiffrement]
+8. [Logs et Audit]
+9. [Scripts d'Automatisation]
+10. [Checklist de Vérification]
 
 ---
-
-## 🎯 Prérequis
+🎯 Prérequis
 
 - Windows 10 (build 1903+) ou Windows 11
 - Droits administrateur
@@ -23,19 +22,18 @@
 
 ---
 
-## ⚙️ Configuration de Base
+⚙️ Configuration de Base
 
-### 1. Vérifier la version de Windows
+ 1. Vérifier la version de Windows
 
-```powershell
+powershell
 # Afficher les informations système
 Get-ComputerInfo | Select-Object WindowsProductName, WindowsVersion, OsBuildNumber
 
 # Vérifier l'édition (Pro/Enterprise requis pour certaines fonctionnalités)
 Get-WindowsEdition -Online
-```
 
-### 2. Activer les fonctionnalités de sécurité essentielles
+2. Activer les fonctionnalités de sécurité essentielles
 
 ```powershell
 # Activer Windows Defender (si désactivé)
@@ -51,9 +49,9 @@ Set-MpPreference -PUAProtection Enabled
 
 ---
 
-## 👥 Gestion des Comptes
+👥 Gestion des Comptes
 
-### 1. Désactiver le compte Administrateur intégré
+1. Désactiver le compte Administrateur intégré
 
 ```powershell
 # Désactiver le compte Administrator
@@ -63,7 +61,7 @@ net user Administrator /active:no
 Get-LocalUser | Where-Object {$_.Enabled -eq $true}
 ```
 
-### 2. Configurer les politiques de mot de passe
+2. Configurer les politiques de mot de passe
 
 ```powershell
 # Via secpol.msc (GUI) ou PowerShell
@@ -77,7 +75,7 @@ net accounts /maxpwage:90
 net accounts /uniquepw:5
 ```
 
-### 3. Activer le verrouillage de compte
+3. Activer le verrouillage de compte
 
 ```powershell
 # Verrouiller après 5 tentatives échouées
@@ -89,8 +87,7 @@ net accounts /lockoutduration:30
 # Réinitialiser le compteur après : 30 minutes
 net accounts /lockoutwindow:30
 ```
-
-### 4. Désactiver les comptes invités
+4. Désactiver les comptes invités
 
 ```powershell
 net user Guest /active:no
@@ -98,9 +95,9 @@ net user Guest /active:no
 
 ---
 
-## 🔥 Pare-feu et Réseau
+🔥 Pare-feu et Réseau
 
-### 1. Activer le pare-feu Windows sur tous les profils
+1. Activer le pare-feu Windows sur tous les profils
 
 ```powershell
 # Activer le pare-feu
@@ -113,7 +110,7 @@ Set-NetFirewallProfile -DefaultInboundAction Block -DefaultOutboundAction Allow
 Get-NetFirewallProfile | Format-Table Name, Enabled
 ```
 
-### 2. Bloquer les protocoles dangereux
+2. Bloquer les protocoles dangereux
 
 ```powershell
 # Bloquer SMBv1 (vulnérable à WannaCry)
@@ -129,7 +126,7 @@ foreach($adapter in $adapters) {
 }
 ```
 
-### 3. Désactiver les services réseau non nécessaires
+3. Désactiver les services réseau non nécessaires
 
 ```powershell
 # Liste des services à désactiver (adapter selon vos besoins)
@@ -150,9 +147,8 @@ foreach($service in $servicesToDisable) {
 
 ---
 
-## 🦠 Antivirus et Protection
-
-### 1. Configuration avancée de Windows Defender
+🦠 Antivirus et Protection
+1. Configuration avancée de Windows Defender
 
 ```powershell
 # Activer la protection anti-ransomware (Controlled Folder Access)
@@ -172,7 +168,7 @@ Add-MpPreference -AttackSurfaceReductionRules_Ids BE9BA2D9-53EA-4CDC-84E5-9B1EEE
 Add-MpPreference -AttackSurfaceReductionRules_Ids D3E037E1-3EB8-44C8-A917-57927947596D -AttackSurfaceReductionRules_Actions Enabled
 ```
 
-### 2. Planifier des analyses régulières
+2. Planifier des analyses régulières
 
 ```powershell
 # Analyse rapide quotidienne à 12h
@@ -186,9 +182,9 @@ Start-MpScan -ScanType FullScan
 
 ---
 
-## 🔄 Mises à Jour et Patches
+🔄 Mises à Jour et Patches
 
-### 1. Configurer Windows Update
+1. Configurer Windows Update
 
 ```powershell
 # Installer le module PSWindowsUpdate
@@ -204,7 +200,7 @@ Install-WindowsUpdate -AcceptAll -AutoReboot
 Get-WUHistory | Select-Object -First 10
 ```
 
-### 2. Activer les mises à jour automatiques
+2. Activer les mises à jour automatiques
 
 ```powershell
 # Via la registry
@@ -214,9 +210,9 @@ Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate\
 
 ---
 
-## 🔐 Chiffrement
+🔐 Chiffrement
 
-### 1. Activer BitLocker (Windows Pro/Enterprise)
+1. Activer BitLocker (Windows Pro/Enterprise)
 
 ```powershell
 # Vérifier si BitLocker est supporté
@@ -231,7 +227,7 @@ Enable-BitLocker -MountPoint "C:" -EncryptionMethod XtsAes256 -UsedSpaceOnly -Tp
 # IMPORTANT : Déplacer ce fichier vers un emplacement sécurisé !
 ```
 
-### 2. Chiffrer les fichiers sensibles (EFS)
+2. Chiffrer les fichiers sensibles (EFS)
 
 ```powershell
 # Chiffrer un dossier
@@ -244,9 +240,9 @@ Get-Item $folder | Select-Object Name, Attributes
 
 ---
 
-## 📊 Logs et Audit
+📊 Logs et Audit
 
-### 1. Activer les logs d'audit
+1. Activer les logs d'audit
 
 ```powershell
 # Activer l'audit des connexions
@@ -262,7 +258,7 @@ auditpol /set /subcategory:"Registry" /success:enable /failure:enable
 auditpol /get /category:*
 ```
 
-### 2. Augmenter la taille des logs
+2. Augmenter la taille des logs
 
 ```powershell
 # Augmenter la taille du log Sécurité à 100 MB
@@ -275,7 +271,7 @@ wevtutil sl System /ms:104857600
 wevtutil sl Application /ms:104857600
 ```
 
-### 3. Exporter les logs pour analyse
+3. Exporter les logs pour analyse
 
 ```powershell
 # Exporter les événements de sécurité des 24 dernières heures
@@ -285,9 +281,9 @@ Get-WinEvent -FilterHashtable @{LogName='Security'; StartTime=$date} | Export-Cs
 
 ---
 
-## 🤖 Scripts d'Automatisation
+🤖 Scripts d'Automatisation
 
-### Script 1 : Audit de Sécurité Complet
+Script 1 : Audit de Sécurité Complet
 
 Fichier : `scripts\audit\Security-Audit.ps1`
 
@@ -317,7 +313,7 @@ function Get-SecurityAudit {
         Write-Host "  ✗ Erreur lors de la vérification de Defender" -ForegroundColor Red
     }
     
-    # 2. Vérifier le pare-feu
+     2. Vérifier le pare-feu
     Write-Host "`n[2/6] Pare-feu Windows" -ForegroundColor Yellow
     $firewall = Get-NetFirewallProfile
     foreach($profile in $firewall) {
@@ -326,7 +322,7 @@ function Get-SecurityAudit {
         Write-Host "  $status $($profile.Name) : $($profile.Enabled)" -ForegroundColor $color
     }
     
-    # 3. Vérifier BitLocker
+    3. Vérifier BitLocker
     Write-Host "`n[3/6] BitLocker" -ForegroundColor Yellow
     try {
         $bitlocker = Get-BitLockerVolume -ErrorAction SilentlyContinue
@@ -343,13 +339,13 @@ function Get-SecurityAudit {
         Write-Host "  ⚠ BitLocker non disponible" -ForegroundColor Yellow
     }
     
-    # 4. Vérifier les mises à jour
+     4. Vérifier les mises à jour
     Write-Host "`n[4/6] Mises à Jour" -ForegroundColor Yellow
     $updates = Get-HotFix | Sort-Object InstalledOn -Descending | Select-Object -First 5
     Write-Host "  ✓ Dernières mises à jour installées :"
     $updates | ForEach-Object { Write-Host "    - $($_.HotFixID) installé le $($_.InstalledOn)" -ForegroundColor Green }
     
-    # 5. Comptes utilisateurs
+    5. Comptes utilisateurs
     Write-Host "`n[5/6] Comptes Utilisateurs" -ForegroundColor Yellow
     $users = Get-LocalUser | Where-Object {$_.Enabled -eq $true}
     $adminUser = Get-LocalUser -Name "Administrator" -ErrorAction SilentlyContinue
@@ -362,7 +358,7 @@ function Get-SecurityAudit {
         Write-Host "  ✓ Compte Administrator désactivé" -ForegroundColor Green
     }
     
-    # 6. Vérifier les protocoles obsolètes
+     6. Vérifier les protocoles obsolètes
     Write-Host "`n[6/6] Protocoles Obsolètes" -ForegroundColor Yellow
     $smb1 = Get-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -ErrorAction SilentlyContinue
     if($smb1) {
@@ -376,16 +372,15 @@ function Get-SecurityAudit {
     Write-Host "╚═══════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
 }
 
-# Exécuter l'audit
+ Exécuter l'audit
 Get-SecurityAudit
 ```
 
-### Script 2 : Durcissement Automatique
+Script 2 : Durcissement Automatique
 
 ```powershell
 # Nom : Auto-Hardening.ps1
 # Description : Applique automatiquement les configurations de sécurité
-
 # ATTENTION : Exécuter en tant qu'administrateur
 
 Write-Host "=== SCRIPT DE DURCISSEMENT AUTOMATIQUE ===" -ForegroundColor Cyan
@@ -397,24 +392,24 @@ if($confirmation -ne "O") {
     exit 
 }
 
-# 1. Activer Windows Defender
+ 1. Activer Windows Defender
 Write-Host "`n[1/10] Configuration de Windows Defender..." -ForegroundColor Yellow
 Set-MpPreference -DisableRealtimeMonitoring $false
 Set-MpPreference -MAPSReporting Advanced
 Set-MpPreference -PUAProtection Enabled
 Write-Host "  ✓ Windows Defender configuré" -ForegroundColor Green
 
-# 2. Activer le pare-feu
+ 2. Activer le pare-feu
 Write-Host "`n[2/10] Configuration du pare-feu..." -ForegroundColor Yellow
 Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True
 Write-Host "  ✓ Pare-feu activé sur tous les profils" -ForegroundColor Green
 
-# 3. Désactiver SMBv1
+ 3. Désactiver SMBv1
 Write-Host "`n[3/10] Désactivation de SMBv1..." -ForegroundColor Yellow
 Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -NoRestart -ErrorAction SilentlyContinue
 Write-Host "  ✓ SMBv1 désactivé" -ForegroundColor Green
 
-# 4. Désactiver les services non nécessaires
+ 4. Désactiver les services non nécessaires
 Write-Host "`n[4/10] Désactivation des services non nécessaires..." -ForegroundColor Yellow
 $services = @("RemoteRegistry", "SSDPSRV", "upnphost")
 foreach($svc in $services) {
@@ -423,35 +418,35 @@ foreach($svc in $services) {
     Write-Host "  ✓ Service $svc désactivé" -ForegroundColor Green
 }
 
-# 5. Configurer les politiques de mot de passe
+5. Configurer les politiques de mot de passe
 Write-Host "`n[5/10] Configuration des politiques de mot de passe..." -ForegroundColor Yellow
 net accounts /minpwlen:12 /maxpwage:90 /uniquepw:5 | Out-Null
 Write-Host "  ✓ Politiques de mot de passe configurées" -ForegroundColor Green
 
-# 6. Configurer le verrouillage de compte
+6. Configurer le verrouillage de compte
 Write-Host "`n[6/10] Configuration du verrouillage de compte..." -ForegroundColor Yellow
 net accounts /lockoutthreshold:5 /lockoutduration:30 /lockoutwindow:30 | Out-Null
 Write-Host "  ✓ Verrouillage de compte configuré" -ForegroundColor Green
 
-# 7. Désactiver les comptes par défaut
+ 7. Désactiver les comptes par défaut
 Write-Host "`n[7/10] Désactivation des comptes par défaut..." -ForegroundColor Yellow
 net user Administrator /active:no 2>$null
 net user Guest /active:no 2>$null
 Write-Host "  ✓ Comptes Administrator et Guest désactivés" -ForegroundColor Green
 
-# 8. Activer l'audit
+ 8. Activer l'audit
 Write-Host "`n[8/10] Activation de l'audit..." -ForegroundColor Yellow
 auditpol /set /subcategory:"Logon" /success:enable /failure:enable | Out-Null
 auditpol /set /subcategory:"File System" /success:enable /failure:enable | Out-Null
 Write-Host "  ✓ Audit activé" -ForegroundColor Green
 
-# 9. Augmenter la taille des logs
+ 9. Augmenter la taille des logs
 Write-Host "`n[9/10] Augmentation de la taille des logs..." -ForegroundColor Yellow
 wevtutil sl Security /ms:104857600
 wevtutil sl System /ms:104857600
 Write-Host "  ✓ Taille des logs augmentée" -ForegroundColor Green
 
-# 10. Mettre à jour Windows Defender
+ 10. Mettre à jour Windows Defender
 Write-Host "`n[10/10] Mise à jour de Windows Defender..." -ForegroundColor Yellow
 Update-MpSignature
 Write-Host "  ✓ Signatures Windows Defender mises à jour" -ForegroundColor Green
@@ -462,7 +457,7 @@ Write-Host "Redémarrage recommandé pour appliquer tous les changements." -Fore
 
 ---
 
-## ✅ Checklist de Vérification
+✅ Checklist de Vérification
 
 ### Sécurité de Base
 - [ ] Windows Defender activé et à jour
@@ -493,7 +488,7 @@ Write-Host "Redémarrage recommandé pour appliquer tous les changements." -Fore
 
 ---
 
-## 📚 Ressources Complémentaires
+📚 Ressources Complémentaires
 
 ### Documentation Microsoft
 - [Windows Security Baselines](https://docs.microsoft.com/en-us/windows/security/threat-protection/windows-security-baselines)
@@ -501,21 +496,21 @@ Write-Host "Redémarrage recommandé pour appliquer tous les changements." -Fore
 - [Windows Defender ATP](https://docs.microsoft.com/en-us/windows/security/threat-protection/microsoft-defender-atp/microsoft-defender-advanced-threat-protection)
 
 ### Outils Recommandés
-- **HardenTools** : Outil de durcissement automatique
-- **O&O ShutUp10** : Contrôle de la confidentialité Windows
-- **Autoruns** : Gestion des programmes au démarrage (Sysinternals)
-- **Process Monitor** : Surveillance en temps réel (Sysinternals)
+- HardenTools: Outil de durcissement automatique
+- O&O ShutUp10 : Contrôle de la confidentialité Windows
+- Autoruns : Gestion des programmes au démarrage (Sysinternals)
+- Process Monitor : Surveillance en temps réel (Sysinternals)
 
 ### Standards et Benchmarks
-- **CIS Benchmarks** : Guides de configuration sécurisée
-- **NIST Cybersecurity Framework**
-- **ANSSI** : Recommandations de sécurité pour Windows 10
+- CIS Benchmarks : Guides de configuration sécurisée
+- NIST Cybersecurity Framework
+- ANSSI : Recommandations de sécurité pour Windows 10
 
 ---
 
-## 🔍 Tests et Validation
+🔍 Tests et Validation
 
-### Vérifier la configuration avec PowerShell
+ Vérifier la configuration avec PowerShell
 
 ```powershell
 # Script de validation rapide
@@ -546,19 +541,19 @@ Test-SecurityConfiguration
 
 ---
 
-## ⚠️ Avertissements
+ ⚠️ Avertissements
 
-1. **Sauvegarde** : Créez toujours une sauvegarde complète avant d'appliquer ces modifications
-2. **Test** : Testez dans un environnement de développement avant la production
-3. **Compatibilité** : Certaines configurations peuvent affecter des applications anciennes
-4. **Support** : Vérifiez la compatibilité avec votre infrastructure IT
+1. Sauvegarde : Créez toujours une sauvegarde complète avant d'appliquer ces modifications
+2. Test : Testez dans un environnement de développement avant la production
+3. Compatibilité : Certaines configurations peuvent affecter des applications anciennes
+4. Support : Vérifiez la compatibilité avec votre infrastructure IT
 
 ---
 
-## 📝 Licence
+ 📝 Licence
 
 Ce guide est fourni à des fins éducatives. Utilisez-le à vos propres risques.
 
-**Version** : 1.0  
-**Dernière mise à jour** : Novembre 2024  
+Version : 1.0  
+Dernière mise à jour : Novembre 2025  
 **Auteur** : Guide de Sécurité Windows
